@@ -68,7 +68,7 @@ fn main() {
             continue;
         }
 
-        println!("Enter move for color {} (RowCol): ", color);
+        print!("Enter move for colour {} (RowCol): ", color);
         let mut input = String::new();
         io::stdin()
             .read_line(&mut input)
@@ -77,7 +77,6 @@ fn main() {
             Ok(s) => s,
             Err(_) => continue,
         };
-        println!("{}", input);
 
         let input: Vec<_> = input.chars().collect();
         if input.len() != 2 {
@@ -103,7 +102,7 @@ fn main() {
         {
             count += 1;
         } else {
-            println!("Invalid mov. Try again.");
+            println!("Invalid move. Try again.");
         }
 
         print_board(&board);
@@ -155,32 +154,19 @@ fn check(
     update: bool,
     dir: &[i32; 2],
 ) -> bool {
-    let mut flag = false;
-
     if ni >= 0 && ni < 8 && nj >= 0 && nj < 8 {
         if board[ni as usize][nj as usize] == color {
             return true;
         } else if board[ni as usize][nj as usize] == oppo_color {
-            flag = check(
-                ni + dir[0],
-                nj + dir[1],
-                board,
-                color,
-                oppo_color,
-                update,
-                dir,
-            );
-        } else {
-            return false;
+            if check(ni + dir[0], nj + dir[1], board, color, oppo_color, update, dir) {
+                if update {
+                    board[ni as usize][nj as usize] = color;
+                }
+                return true;    
+            }
         }
-    } else {
-        return false;
     }
-
-    if flag && update {
-        board[ni as usize][nj as usize] = color;
-    }
-    flag
+    return false; 
 }
 
 fn print_board(board: &[[char; 8]; 8]) {
