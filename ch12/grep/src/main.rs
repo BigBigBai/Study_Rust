@@ -6,7 +6,7 @@ fn main() {
     let args: Vec<String> = env::args().collect();
 
     // 1. grep -h/--help
-    if args.len() == 2 && (args[1] == "-h" || args[1] == "--help") {
+    if args.len() == 2 && (&args[1] == "-h" || &args[1] == "--help") {
         println!("Usage: grep [OPTIONS] <pattern> <files...>");
         println!("Options:");
         println!("-i                Case-insensitive search");
@@ -21,7 +21,7 @@ fn main() {
     // 1. grep <pattern> <files...>
     // 2. grep [OPTIONS] <pattern> <files...>
     // 3. grep <pattern> <files...> [OPTIONS]
-    // 4. grep Utility tests/*.md, auto-complete
+    // 4. grep <pattern> *.md, auto-complete
     if args.len() >= 3 {
         let mut lock_query = 0;
         let mut query = String::new();
