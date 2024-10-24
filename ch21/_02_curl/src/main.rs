@@ -20,16 +20,18 @@ struct Cli {
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
+    
     let args = Cli::from_args();
     // println!("{:#?}", args);
-    println!("Requesting URL: {}", args.url);
-    println!("Method: GET");
-
     
     let url = args.url.clone();
     let response = reqwest::get(url).await?;
     let body = response.text().await?;
     // let json_body: serde_json::Value = response.json().await?;
+    
+
+    println!("Requesting URL: {}", args.url);
+    println!("Method: GET");
     println!("Response body:\n{}", body);
     // println!("{:#?}", json_body);    
 
