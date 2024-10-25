@@ -143,6 +143,7 @@ dependencies = [
  "serde_json",
  "structopt",
  "tokio",
+ "url",
 ]
 
 [[package]]
