@@ -56,11 +56,11 @@ async fn main() -> Result<(), Error> {
     let response = reqwest::get(url).await;
     let response = match response {
         Ok(response) => {
-            println!("{}", response.status());
+            // println!("{}", response.status());
             response
         },
         Err(err) => {
-            println!("{}", err);
+            // println!("{}", err);
             println!("Error: Unable to connect to the server. Perhaps the network is offline or the server hostname cannot be resolved.");
             
             return Ok(());
@@ -70,8 +70,6 @@ async fn main() -> Result<(), Error> {
         println!("Error: Request failed with status code: 404.");
         return Ok(());
     }
-    // println!("{:?}", response);
-
 
     // Check if the response is JSON formatted
     match response.json::<Value>().await {
@@ -85,8 +83,11 @@ async fn main() -> Result<(), Error> {
         }
     }
 
-    // let body = response.text().await?;
-    // println!("Response body:\n{}", body);
+    // 问题: 如何解决response已经被消耗的问题
+    let url = args.url.clone();
+    let response = reqwest::get(url).await?;
+    let body = response.text().await?;
+    println!("Response body:\n{}", body);
 
     
        
@@ -136,7 +137,7 @@ async fn main() -> Result<(), Error> {
 
 
     } else {
-        println!("Post method error");
+        // println!("Post method error");
     }
 
     Ok(())
