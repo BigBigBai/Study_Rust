@@ -84,6 +84,7 @@ async fn main() -> Result<(), Error> {
     }
 
     // 问题: 如何解决response已经被消耗的问题
+    // 方法: 用 header content-type
     let url = args.url.clone();
     let response = reqwest::get(url).await?;
     let body = response.text().await?;
