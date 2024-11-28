@@ -29,6 +29,12 @@ async fn handle_request(
             let response = format!("Visit count: {}", counter.total_visits);
             Ok(Response::new(Body::from(response)))
         }
+
+        // Adding new songs
+        (&Method::POST, "/songs/new") => {
+            Ok(Response::new(req.into_body()))
+        }
+        
         // Handle other paths
         _ => Ok(Response::builder()
             .status(404)
@@ -42,8 +48,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // Shared state for visit count
     let counter = Arc::new(Mutex::new(VisitCounter::default()));
 
-    let addr = ([127, 0, 0, 1], 8080).into();
-
     // Define the service
     let make_svc = make_service_fn(move |_conn| {
         let counter = Arc::clone(&counter);
@@ -53,8 +57,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             }))
         }
     });
-
+    
     // Bind and serve the server
+    let addr = ([127, 0, 0, 1], 8080).into();
     let server = Server::bind(&addr).serve(make_svc);
     println!("The server is currently listening on localhost:8080.");
 

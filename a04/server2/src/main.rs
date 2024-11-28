@@ -41,9 +41,11 @@ async fn handle_request(
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // Shared state for visit count
     let counter = Arc::new(Mutex::new(VisitCounter::default()));
+    println!("{}", counter);
+    
+
 
     let addr = ([127, 0, 0, 1], 8080).into();
-
     // Define the service
     let make_svc = make_service_fn(move |_conn| {
         let counter = Arc::clone(&counter);
@@ -53,7 +55,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             }))
         }
     });
-
     // Bind and serve the server
     let server = Server::bind(&addr).serve(make_svc);
     println!("The server is currently listening on localhost:8080.");
