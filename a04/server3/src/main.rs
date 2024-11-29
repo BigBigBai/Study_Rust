@@ -3,6 +3,8 @@ use hyper::service::{make_service_fn, service_fn};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 use serde_json::json;
+use std::fs::{File, OpenOptions};
+use std::io::{Read, Write};
 
 // Define the structures for request and response
 #[derive(Debug, Deserialize)]
@@ -12,7 +14,7 @@ struct NewSongRequest {
     genre: String,
 }
 
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 struct Song {
     id: u64,
     title: String,
@@ -25,14 +27,49 @@ type SongsDB = Arc<Mutex<Vec<Song>>>;
 type VisitCount = Arc<Mutex<u64>>;
 type IdCount = Arc<Mutex<u64>>;
 
+const LIBRARY_FILE: &str = "library.json";
+
+fn load_library() -> Vec<Song> {
+    // Try to open the library file
+    if let Ok(mut file) = File::open(LIBRARY_FILE) {
+        let mut contents = String::new();
+        if file.read_to_string(&mut contents).is_ok() {
+            if let Ok(songs) = serde_json::from_str::<Vec<Song>>(&contents) {
+                return songs;
+            }
+        }
+    }
+
+    // Return an empty library if the file doesn't exist or is invalid
+    vec![]
+}
+
+fn save_library(songs: &Vec<Song>) {
+    if let Ok(mut file) = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .open(LIBRARY_FILE)
+    {
+        if let Ok(contents) = serde_json::to_string_pretty(songs) {
+            let _ = file.write_all(contents.as_bytes());
+        }
+    }
+}
+
+
 
 #[tokio::main]
 async fn main() {
     // Shared state
-    let songs_db: SongsDB = Arc::new(Mutex::new(Vec::new()));
+    let songs_db: SongsDB = Arc::new(Mutex::new(load_library()));
     let visit_count: VisitCount = Arc::new(Mutex::new(0));
-    let id_count: IdCount = Arc::new(Mutex::new(0));
+    
+    // println!("{:?}", songs_db.lock().unwrap().len());
+    let length: u64 = songs_db.lock().unwrap().len().try_into().unwrap();
+    let id_count: IdCount = Arc::new(Mutex::new(length));
 
+    
     let make_svc = make_service_fn(move |_| {
         let songs_db = songs_db.clone();
         let visit_count = visit_count.clone();
@@ -89,6 +126,7 @@ async fn route_request(
     }
 }
 
+
 async fn handle_add_song(
     req: Request<Body>,
     songs_db: SongsDB,
@@ -119,17 +157,17 @@ async fn handle_add_song(
     {
         let mut db = songs_db.lock().unwrap();
         db.push(new_song.clone());
+        // Persist the updated library to the file
+        save_library(&db);
     }
 
     let response_body = serde_json::to_string(&new_song).unwrap();
-
     Ok(Response::builder()
         .status(StatusCode::OK)
         .header("Content-Type", "application/json")
         .body(Body::from(response_body))
         .unwrap())
 }
-
 
 
 async fn handle_search_songs(
@@ -183,13 +221,13 @@ async fn handle_search_songs(
         .collect();
 
     let response_body = serde_json::to_string(&filtered_songs).unwrap();
-
     Ok(Response::builder()
         .status(StatusCode::OK)
         .header("Content-Type", "application/json")
         .body(Body::from(response_body))
         .unwrap())
 }
+
 
 async fn handle_play_song(
     req: Request<Body>,
@@ -210,12 +248,16 @@ async fn handle_play_song(
     };
 
     let mut songs = songs_db.lock().unwrap();
-    if let Some(song) = songs.iter_mut().find(|s| s.id == song_id) {
-        // Increment the play count
-        song.play_count += 1;
+    // Search for the song index
+    if let Some(index) = songs.iter().position(|s| s.id == song_id) {
+        // Update play count using the index
+        songs[index].play_count += 1;
+
+        // Persist the updated library to the file
+        save_library(&songs);
 
         // Return the updated song as JSON
-        let response_body = serde_json::to_string(song).unwrap();
+        let response_body = serde_json::to_string(&songs[index]).unwrap();
         Ok(Response::builder()
             .status(StatusCode::OK)
             .header("Content-Type", "application/json")
